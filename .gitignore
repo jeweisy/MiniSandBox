@@ -7,3 +7,9 @@ __pycache__/
 reports/*.json
 samples/*
 !samples/test.txt
+
+build/
+dist/
+*.spec
+reports/
+
