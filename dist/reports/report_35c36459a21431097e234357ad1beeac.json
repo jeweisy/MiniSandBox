@@ -1,0 +1,28 @@
+{
+    "scan_metadata": {
+        "timestamp": "2026-07-01T04:52:55.312090",
+        "target_hashes": {
+            "md5": "35c36459a21431097e234357ad1beeac",
+            "sha256": "c26ef03b6188ffd805ea0f8f0c36c0e9f87152a9e3b63cbbd61366ee789f6b9b",
+            "sha1": "3e87645efff5e00d56baa28c122eb91db39e176d"
+        },
+        "threat_classification": {
+            "risk_score": 0,
+            "verdict": "CLEAN"
+        }
+    },
+    "static_analysis": {
+        "pe_imports": null,
+        "flagged_strings": [],
+        "section_entropy": []
+    },
+    "threat_intelligence": {
+        "status": "no_key",
+        "message": "VirusTotal API key is missing."
+    },
+    "dynamic_analysis": {
+        "spawned_processes": [],
+        "file_system_events": [],
+        "network_connections": []
+    }
+}

@@ -9,137 +9,138 @@ from core.analyzer import extract_strings, filter_suspicious_strings, analyze_se
 from core.reporter import calculate_risk_score, export_to_json
 
 ctk.set_appearance_mode("dark")
-
+ctk.set_default_color_theme("blue")
 
 class MiniSandboxGUI(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         self.title("MiniSandBox Engine")
-        self.geometry("760x540")
-        self.resizable(False, False)
+        self.geometry("900x620")
+        self.minsize(800, 560)
         self.configure(fg_color="#0D0E12")
 
         self.selected_file_path = None
+        self._build_ui()
 
-        self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.header_frame.pack(pady=(30, 20), padx=40, fill="x")
+    def _build_ui(self):
+        # Header
+        header = ctk.CTkFrame(self, fg_color="transparent")
+        header.pack(pady=(24, 12), padx=36, fill="x")
 
-        self.title_label = ctk.CTkLabel(
-            self.header_frame,
-            text="MINISANDBOX",
-            font=ctk.CTkFont(family="Segoe UI", size=20, weight="bold"),
+        ctk.CTkLabel(
+            header, text="MINISANDBOX",
+            font=ctk.CTkFont(family="Segoe UI", size=22, weight="bold"),
             text_color="#FFFFFF"
-        )
-        self.title_label.pack(side="left")
+        ).pack(side="left")
 
-        self.subtitle_label = ctk.CTkLabel(
-            self.header_frame,
-            text=" // automated malware analytics",
+        ctk.CTkLabel(
+            header, text=" // automated malware analytics",
             font=ctk.CTkFont(family="Segoe UI", size=12),
             text_color="#4B5563"
-        )
-        self.subtitle_label.pack(side="left", padx=5, pady=(4, 0))
+        ).pack(side="left", pady=(4, 0))
 
-        self.main_frame = ctk.CTkFrame(self, fg_color="#16171D", corner_radius=8, border_width=1,
-                                       border_color="#24262F")
-        self.main_frame.pack(pady=10, padx=40, fill="both", expand=True)
+        # File selector card
+        file_card = ctk.CTkFrame(self, fg_color="#16171D", corner_radius=10,
+                                  border_width=1, border_color="#24262F")
+        file_card.pack(pady=(0, 10), padx=36, fill="x")
 
-        self.file_section = ctk.CTkFrame(self.main_frame, fg_color="transparent")
-        self.file_section.pack(pady=(25, 15), padx=30, fill="x")
+        file_inner = ctk.CTkFrame(file_card, fg_color="transparent")
+        file_inner.pack(pady=16, padx=20, fill="x")
 
         self.btn_browse = ctk.CTkButton(
-            self.file_section,
-            text="Select Binary",
+            file_inner, text="＋  Select Binary",
             command=self.browse_file,
             font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
-            fg_color="#24262F",
-            hover_color="#2D303B",
-            text_color="#E5E7EB",
-            height=36,
-            width=120,
-            corner_radius=4
+            fg_color="#1F6FEB", hover_color="#1558C0",
+            text_color="#FFFFFF", height=38, width=140, corner_radius=6
         )
         self.btn_browse.pack(side="left")
 
-        self.lbl_file_path = ctk.CTkLabel(
-            self.file_section,
-            text="No artifact ingested.",
+        self.lbl_file = ctk.CTkLabel(
+            file_inner, text="No file selected.",
             font=ctk.CTkFont(family="Segoe UI", size=12),
             text_color="#6B7280"
         )
-        self.lbl_file_path.pack(side="left", padx=15)
+        self.lbl_file.pack(side="left", padx=16)
 
-        self.score_display_frame = ctk.CTkFrame(self.main_frame, fg_color="#1C1D24", corner_radius=6, border_width=1,
-                                                border_color="#2A2C36")
-        self.score_display_frame.pack(pady=10, padx=30, fill="x")
+        # Score display
+        score_card = ctk.CTkFrame(self, fg_color="#16171D", corner_radius=10,
+                                   border_width=1, border_color="#24262F")
+        score_card.pack(pady=(0, 10), padx=36, fill="x")
+
+        score_inner = ctk.CTkFrame(score_card, fg_color="transparent")
+        score_inner.pack(pady=16, padx=20, fill="x")
 
         self.score_label = ctk.CTkLabel(
-            self.score_display_frame,
-            text="--",
-            font=ctk.CTkFont(family="Segoe UI", size=48, weight="bold"),
-            text_color="#374151"
+            score_inner, text="--",
+            font=ctk.CTkFont(family="Segoe UI", size=52, weight="bold"),
+            text_color="#2D3748"
         )
-        self.score_label.pack(pady=(15, 2))
+        self.score_label.pack(side="left")
+
+        verdict_col = ctk.CTkFrame(score_inner, fg_color="transparent")
+        verdict_col.pack(side="left", padx=20)
 
         self.verdict_label = ctk.CTkLabel(
-            self.score_display_frame,
-            text="AWAITING INGESTION",
-            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            verdict_col, text="AWAITING INGESTION",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
             text_color="#4B5563"
         )
-        self.verdict_label.pack(pady=(0, 15))
-
-        self.txt_console = ctk.CTkTextbox(
-            self.main_frame,
-            fg_color="#0D0E12",
-            border_color="#24262F",
-            border_width=1,
-            corner_radius=4,
-            font=ctk.CTkFont(family="Consolas", size=11),
-            text_color="#A3AED0"
-        )
-        self.txt_console.pack(pady=(10, 25), padx=30, fill="both", expand=True)
-        self.txt_console.configure(state="disabled")
-
-        self.footer_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.footer_frame.pack(pady=(10, 20), padx=40, fill="x")
+        self.verdict_label.pack(anchor="w")
 
         self.lbl_status = ctk.CTkLabel(
-            self.footer_frame,
-            text="System status: Core engine ready.",
+            verdict_col, text="Core engine ready.",
             font=ctk.CTkFont(family="Segoe UI", size=11),
-            text_color="#4B5563"
+            text_color="#374151"
         )
-        self.lbl_status.pack(side="left")
+        self.lbl_status.pack(anchor="w", pady=(4, 0))
 
         self.btn_analyze = ctk.CTkButton(
-            self.footer_frame,
-            text="Analyze",
+            score_inner, text="Analyze",
             state="disabled",
-            fg_color="#10B981",
-            hover_color="#059669",
-            text_color="#FFFFFF",
-            height=36,
-            width=100,
-            corner_radius=4,
-            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
-            command=self.start_analysis_thread
+            command=self.start_analysis_thread,
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+            fg_color="#10B981", hover_color="#059669",
+            text_color="#FFFFFF", height=42, width=120, corner_radius=6
         )
         self.btn_analyze.pack(side="right")
 
+        # Console
+        console_frame = ctk.CTkFrame(self, fg_color="#16171D", corner_radius=10,
+                                      border_width=1, border_color="#24262F")
+        console_frame.pack(pady=(0, 20), padx=36, fill="both", expand=True)
+
+        ctk.CTkLabel(
+            console_frame, text="OUTPUT",
+            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+            text_color="#374151"
+        ).pack(anchor="w", padx=16, pady=(12, 0))
+
+        self.txt_console = ctk.CTkTextbox(
+            console_frame,
+            fg_color="#0D0E12", border_color="#1F2028",
+            border_width=1, corner_radius=6,
+            font=ctk.CTkFont(family="Consolas", size=11),
+            text_color="#A3AED0"
+        )
+        self.txt_console.pack(pady=(6, 16), padx=16, fill="both", expand=True)
+        self.txt_console.configure(state="disabled")
+
     def browse_file(self):
-        file_path = filedialog.askopenfilename(
+        path = filedialog.askopenfilename(
             title="Select Windows Portable Executable",
             filetypes=[("Executable Files", "*.exe"), ("All Files", "*.*")]
         )
-        if file_path:
-            self.selected_file_path = file_path
-            self.lbl_file_path.configure(text=os.path.basename(file_path), text_color="#9CA3AF")
+        if path:
+            self.selected_file_path = path
+            self.lbl_file.configure(
+                text=os.path.basename(path), text_color="#9CA3AF"
+            )
             self.btn_analyze.configure(state="normal")
-            self.update_console(f"[+] Loaded payload successfully: {file_path}")
+            self.log(f"[+] Loaded: {path}")
 
-    def update_console(self, text):
+    def log(self, text):
         self.txt_console.configure(state="normal")
         self.txt_console.insert("end", text + "\n")
         self.txt_console.see("end")
@@ -148,50 +149,64 @@ class MiniSandboxGUI(ctk.CTk):
     def start_analysis_thread(self):
         self.btn_analyze.configure(state="disabled")
         self.btn_browse.configure(state="disabled")
-        self.lbl_status.configure(text="System status: Processing artifact...")
+        self.lbl_status.configure(text="Processing artifact...")
+        threading.Thread(target=self.run_pipeline, daemon=True).start()
 
-        analysis_thread = threading.Thread(target=self.run_sandbox_pipeline)
-        analysis_thread.start()
-
-    def run_sandbox_pipeline(self):
+    def run_pipeline(self):
         api_key = os.environ.get("VT_API_KEY", "")
         sample = self.selected_file_path
 
-        self.update_console("[*] Initializing static heuristic inspection...")
+        self.log("[*] Calculating hashes...")
         hashes = calculate_hashes(sample)
+        if not hashes:
+            self.log("[-] Hash calculation failed.")
+            self._reset_buttons()
+            return
 
-        self.update_console("[*] Dispatching signature queries to threat feed...")
-        vt_results = check_hash_vt(hashes["sha256"], api_key)
+        self.log(f"    MD5    : {hashes['md5']}")
+        self.log(f"    SHA1   : {hashes['sha1']}")
+        self.log(f"    SHA256 : {hashes['sha256']}")
 
-        pe_imports = analyze_pe_imports(sample)
-        all_strings = extract_strings(sample)
-        suspicious_strings = filter_suspicious_strings(all_strings)
-        sections = analyze_sections(sample)
-
-        self.update_console("[*] Correlating indicator matrices...")
-        risk_score, verdict = calculate_risk_score(vt_results, suspicious_strings, sections, [], [])
-
-        export_to_json(hashes, vt_results, pe_imports, suspicious_strings, sections, [], [], [])
-
-        self.lbl_status.configure(text="System status: Integrity analysis complete.")
-        self.score_label.configure(text=f"{risk_score}")
-        self.verdict_label.configure(text=verdict)
-
-        if verdict == "CLEAN":
-            self.score_label.configure(text_color="#10B981")
-            self.verdict_label.configure(text_color="#10B981")
-        elif verdict == "SUSPICIOUS":
-            self.score_label.configure(text_color="#F59E0B")
-            self.verdict_label.configure(text_color="#F59E0B")
+        self.log("[*] Querying VirusTotal...")
+        vt = check_hash_vt(hashes["sha256"], api_key)
+        if vt["status"] == "success":
+            self.log(f"    Malicious: {vt['malicious']}  Suspicious: {vt['suspicious']}")
         else:
-            self.score_label.configure(text_color="#EF4444")
-            self.verdict_label.configure(text_color="#EF4444")
+            self.log(f"    VT: {vt.get('message', 'No data')}")
 
-        self.update_console(f"[+] Execution pipeline finished. Verdict: {verdict}")
+        self.log("[*] Parsing PE imports...")
+        imports = analyze_pe_imports(sample)
+        if imports:
+            self.log(f"    {len(imports)} DLL(s) found.")
+        else:
+            self.log("    Not a PE file or no imports found.")
 
+        self.log("[*] Extracting strings...")
+        strings = extract_strings(sample)
+        suspicious = filter_suspicious_strings(strings)
+        self.log(f"    {len(strings)} strings, {len(suspicious)} suspicious.")
+
+        self.log("[*] Analyzing section entropy...")
+        sections = analyze_sections(sample)
+        if sections:
+            for s in sections:
+                self.log(f"    {s['name']:<12} entropy: {s['entropy']}  {s['flag']}")
+
+        self.log("[*] Calculating risk score...")
+        score, verdict = calculate_risk_score(vt, suspicious, sections, [], [])
+        export_to_json(hashes, vt, imports, suspicious, sections, [], [], [])
+
+        self.log(f"\n[+] VERDICT: {verdict}  |  SCORE: {score}/100\n")
+
+        color = {"CLEAN": "#10B981", "SUSPICIOUS": "#F59E0B", "MALICIOUS": "#EF4444"}.get(verdict, "#FFFFFF")
+        self.score_label.configure(text=str(score), text_color=color)
+        self.verdict_label.configure(text=verdict, text_color=color)
+        self.lbl_status.configure(text="Analysis complete.")
+        self._reset_buttons()
+
+    def _reset_buttons(self):
         self.btn_browse.configure(state="normal")
         self.btn_analyze.configure(state="normal")
-
 
 if __name__ == "__main__":
     app = MiniSandboxGUI()

@@ -1,0 +1,36 @@
+{
+    "scan_metadata": {
+        "timestamp": "2026-07-01T04:55:05.192029",
+        "target_hashes": {
+            "md5": "8227a907ddabc490c8e934a906066c44",
+            "sha256": "5e7486c0a6fd27e743ffe494e6b9d366186f3a53aca1c2e1addb56d35659a0d1",
+            "sha1": "4bf70efe6334fbdeb33241e2a82724a332e35ee2"
+        },
+        "threat_classification": {
+            "risk_score": 10,
+            "verdict": "CLEAN"
+        }
+    },
+    "static_analysis": {
+        "pe_imports": null,
+        "flagged_strings": [
+            "ts4tr_v1.124.0.4.exe",
+            "fTPF",
+            "rfTp=",
+            "ZsFTPW",
+            "9fTP",
+            "~DfTP",
+            "\\FTp"
+        ],
+        "section_entropy": []
+    },
+    "threat_intelligence": {
+        "status": "no_key",
+        "message": "VirusTotal API key is missing."
+    },
+    "dynamic_analysis": {
+        "spawned_processes": [],
+        "file_system_events": [],
+        "network_connections": []
+    }
+}
