@@ -1,39 +1,47 @@
+import os
 import math
-import re
 import pefile
 
 
-def extract_strings(file_path, min_length=4):
-    strings_list = []
+def extract_strings(file_path, min_len=4):
+    MAX_FILE_SIZE = 100 * 1024 * 1024
+    if os.path.getsize(file_path) > MAX_FILE_SIZE:
+        print(f"[-] File too large for string extraction (max 100MB).")
+        return []
+
+    strings = []
     try:
         with open(file_path, "rb") as f:
             content = f.read()
 
-        ascii_re = re.compile(b"[\x20-\x7E]{" + bytes(str(min_length), "utf-8") + b",}")
-        for match in ascii_re.finditer(content):
-            strings_list.append(match.group().decode("utf-8", errors="ignore"))
-
-        unicode_re = re.compile(b"(?:[\x20-\x7E]\x00){" + bytes(str(min_length), "utf-8") + b",}")
-        for match in unicode_re.finditer(content):
-            strings_list.append(match.group().decode("utf-16le", errors="ignore"))
-
+        current_str = ""
+        for byte in content:
+            if 32 <= byte <= 126:
+                current_str += chr(byte)
+            else:
+                if len(current_str) >= min_len:
+                    strings.append(current_str)
+                current_str = ""
+        if len(current_str) >= min_len:
+            strings.append(current_str)
     except Exception:
         pass
-    return strings_list
+    return strings
 
 
-def filter_suspicious_strings(strings_list):
-    suspicious = []
-    patterns = [
-        r"https?://", r"www\.", r"\.exe", r"\.dll", r"\.sys",
-        r"cmd\.exe", r"powershell", r"RegSetValueEx", r"CreateRemoteThread",
-        r"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"
+def filter_suspicious_strings(strings):
+    suspicious_keywords = [
+        "http", "https", "ftp", ".exe", ".dll", ".ps1", ".bat",
+        "CreateProcess", "VirtualAlloc", "WriteProcessMemory",
+        "RegSetValueEx", "URLDownloadToFile", "ShellExecute",
+        "cmd.exe", "powershell.exe", "sc.exe", "schtasks"
     ]
-    for s in strings_list:
-        for pattern in patterns:
-            if re.search(pattern, s, re.IGNORECASE) and s not in suspicious:
-                suspicious.append(s)
-    return suspicious
+    found = []
+    for s in strings:
+        for key in suspicious_keywords:
+            if key.lower() in s.lower() and s not in found:
+                found.append(s)
+    return found
 
 
 def analyze_sections(file_path):
@@ -41,26 +49,13 @@ def analyze_sections(file_path):
     try:
         pe = pefile.PE(file_path)
         for section in pe.sections:
-            name = section.Name.decode("utf-8", errors="ignore").strip("\x00")
+            name = section.Name.decode('utf-8', errors='ignore').strip('\x00')
             data = section.get_data()
-            if not data:
-                entropy = 0.0
-            else:
-                entropy = 0.0
-                length = len(data)
-                occurences = [0] * 256
-                for byte in data:
-                    occurences[byte] += 1
-                for count in occurences:
-                    if count > 0:
-                        p = float(count) / length
-                        entropy -= p * math.log(p, 2)
+            entropy = calculate_entropy(data)
 
             flag = "NORMAL"
-            if entropy > 7.2:
-                flag = "SUSPICIOUS (Packed/Encrypted)"
-            elif entropy < 1.0 and len(data) > 0:
-                flag = "SUSPICIOUS (Anormally Empty)"
+            if entropy > 7.0:
+                flag = "SUSPICIOUS (PACKED/ENCRYPTED)"
 
             sections_data.append({
                 "name": name,
@@ -68,6 +63,16 @@ def analyze_sections(file_path):
                 "flag": flag
             })
     except Exception:
-        return None
+        pass
     return sections_data
 
+
+def calculate_entropy(data):
+    if not data:
+        return 0
+    entropy = 0
+    for x in range(256):
+        p_x = float(data.count(x)) / len(data)
+        if p_x > 0:
+            entropy += - p_x * math.log(p_x, 2)
+    return entropy
