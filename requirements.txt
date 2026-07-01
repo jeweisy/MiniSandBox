@@ -1,0 +1,6 @@
+customtkinter
+pefile
+requests
+psutil
+watchdog
+
